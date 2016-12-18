@@ -3,7 +3,6 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
-#include "toneAC.h"
 #include "iSin.h"
 #include "RunningMedian.h"
 
@@ -21,10 +20,10 @@ int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 // LED setup
-#define NUM_LEDS             475
-#define DATA_PIN             3
+#define NUM_LEDS             300
+#define DATA_PIN             8
 #define CLOCK_PIN            4
-#define LED_COLOR_ORDER      BGR//GBR
+#define LED_COLOR_ORDER      GBR
 #define BRIGHTNESS           150
 #define DIRECTION            1     // 0 = right to left, 1 = left to right
 #define MIN_REDRAW_INTERVAL  16    // Min redraw interval (ms) 33 = 30fps / 16 = 63fps
@@ -35,7 +34,7 @@ int16_t gx, gy, gz;
 long previousMillis = 0;           // Time of the last redraw
 int levelNumber = 0;
 long lastInputTime = 0;
-#define TIMEOUT              30000
+#define TIMEOUT              10000
 #define LEVEL_COUNT          9
 #define MAX_VOLUME           10
 iSin isin = iSin();
@@ -43,7 +42,7 @@ iSin isin = iSin();
 // JOYSTICK
 #define JOYSTICK_ORIENTATION 1     // 0, 1 or 2 to set the angle of the joystick
 #define JOYSTICK_DIRECTION   1     // 0/1 to flip joystick direction
-#define ATTACK_THRESHOLD     30000 // The threshold that triggers an attack
+#define ATTACK_THRESHOLD     4000 // The threshold that triggers an attack
 #define JOYSTICK_DEADZONE    5     // Angle to ignore
 int joystickTilt = 0;              // Stores the angle of the joystick
 int joystickWobble = 0;            // Stores the max amount of acceleration (wobble)
@@ -102,7 +101,7 @@ void setup() {
     accelgyro.initialize();
     
     // Fast LED
-    FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, LED_COLOR_ORDER>(leds, NUM_LEDS);
+    FastLED.addLeds<WS2813, DATA_PIN, LED_COLOR_ORDER>(leds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     FastLED.setDither(1);
     
@@ -406,7 +405,7 @@ void gameOver(){
 
 void die(){
     playerAlive = 0;
-    if(levelNumber > 0) lives --;
+    //if(levelNumber > 0) lives --;
     updateLives();
     if(lives == 0){
         levelNumber = 0;
@@ -691,7 +690,6 @@ void SFXtilt(int amount){
     int f = map(abs(amount), 0, 90, 80, 900)+random8(100);
     if(playerPositionModifier < 0) f -= 500;
     if(playerPositionModifier > 0) f += 200;
-    toneAC(f, min(min(abs(amount)/9, 5), MAX_VOLUME));
     
 }
 void SFXattacking(){
@@ -699,26 +697,21 @@ void SFXattacking(){
     if(random8(5)== 0){
       freq *= 3;
     }
-    toneAC(freq, MAX_VOLUME);
 }
 void SFXdead(){
     int freq = max(1000 - (millis()-killTime), 10);
     freq += random8(200);
     int vol = max(10 - (millis()-killTime)/200, 0);
-    toneAC(freq, MAX_VOLUME);
 }
 void SFXkill(){
-    toneAC(2000, MAX_VOLUME, 1000, true);
 }
 void SFXwin(){
     int freq = (millis()-stageStartTime)/3.0;
     freq += map(sin(millis()/20.0)*1000.0, -1000, 1000, 0, 20);
     int vol = 10;//max(10 - (millis()-stageStartTime)/200, 0);
-    toneAC(freq, MAX_VOLUME);
 }
 
 void SFXcomplete(){
-    noToneAC();
 }
 
 
